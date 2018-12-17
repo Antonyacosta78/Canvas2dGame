@@ -21,35 +21,6 @@ function rand(min,max){
 	return Math.floor(Math.random()*((max+1)-min)+min);
 }
 
-class Asset{
-	constructor(type,name,folder = "media"){
-			this.name = name;
-			this.path = this.folder+"/"+this.name;
-			switch(type.toLowerCase()){
-				case "audio":
-					this.file = new Audio();
-					break;
-				case "image":
-					this.file = new Image();
-					break;
-			}
-			this.file.src = this.path;
-			this.file.onload = function(){ 
-				_ASSETS_LOADED++;
-			}
-	}
-	
-	get file(){
-		return this.file;
-	}
-	
-	get source(){
-		return this.file.src;
-	}
-	
-}
-
-
 class GameManipulator{
     constructor(context,rect){
         this.rect = rect;
