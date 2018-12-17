@@ -8,17 +8,19 @@ class Sprite{
             this.box = new Box(box);
         }
         this.boxes = boxes;//how many boxes (sprites) are there per row
-        this.row = 1;
-        this.col = 1;
+        this.crow = 0;
+        this.col = 0;
     }
     
-    row(row){
-        this.row = row;
-        this.box.row(this.row);
+    row(row = 0){
+        this.crow = row;
+        debug(this.crow);
+        this.box.row(this.crow);
     }
 
     next(){
-        this.col = this.col == this.boxes[this.row] ? 1 : this.col+1;
+        this.col = this.col == this.boxes[this.row]-1 ? 0 : this.col+1;
+        debug(this.col);
         this.box.col(this.col);
     }
 
@@ -61,12 +63,12 @@ class Box{
         }
     }
 
-    row(index = 1){
-        this.y = this.initvalues.y*index;
+    row(index = 0){
+        this.y = this.h*index;
         return this;
     }  
-    col(index = 1){
-        this.x = this.initvalues.x*index;
+    col(index = 0){
+        this.x = this.w*index;
         return this;
     }
 
@@ -120,7 +122,7 @@ class Sound{
 }
 
 class Character{
-    constructor(sprite, pos, spritesdirections, stats = {speed: 5}){
+    constructor(sprite, pos, spritesdirections, stats = {speed: 3}){
         this.sprite = sprite;
         this.spritesdirections = spritesdirections; //format: {direction:rowindex} example: {"up":1,"down":2,"left":3,"right":4}
         this.stats = stats;
@@ -142,7 +144,21 @@ class Character{
             case "right":
                 this.pos.x+=this.stats.speed;
                 break;
-            this.sprite.row(this.spritesdirections[direction]);
         }
+        debug(this.pos);
+        this.sprite.row(this.spritesdirections[direction]);
     }
+}
+
+class Enemy extends Character{
+
+    constructor(sprite, pos, spritesdirection, movedirection){
+        super(sprite, pos, spritesdirection);
+        this.movedirection = movedirection;
+
+    }
+    move(){
+        super.move(this.movedirection);
+    }
+
 }
