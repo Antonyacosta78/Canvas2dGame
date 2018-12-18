@@ -33,7 +33,7 @@ class Sprite{
         }
         this.image.ready = false;
         this.image.addEventListener("load",function(){
-            debug("Loaded "+this.src, true);
+            debug("Sprite "+this.src, true);
             this.ready = true;
         });
     }
@@ -127,6 +127,8 @@ class Character{
         this.spritesdirections = spritesdirections; //format: {direction:rowindex} example: {"up":1,"down":2,"left":3,"right":4}
         this.stats = stats;
         this.pos = pos;
+        this.pos.w = this.sprite.box.w*2;
+        this.pos.h = this.sprite.box.h*2;
     }
 
     move(direction){
@@ -168,12 +170,15 @@ class GameController{
         this.dom = document.getElementById(canvasid);
         this.rect = this.dom.getBoundingClientRect();
         this.context = this.dom.getContext("2d");
-
+        this.enemies = [];
     }
 
     setPlayerControls(up,down = false, left = false, right = false){
         if(typeof up === "string" && down && left && right){
-            this.controls = {up: up, down: down, left: left, right: right};
+            this.controls[up] = "up";
+            this.controls[down] = "down";
+            this.controls[left] = "left";
+            this.controls[right] = "right";
         }else if(typeof up === "object"){
             this.controls = up;
         }
@@ -181,6 +186,55 @@ class GameController{
 
     setPlayer(char){
         this.player = char;
+    }
+
+    addEnemy(enemy){
+        this.enemies.push(enemy);
+    }
+
+    addRandomEnemy(list){
+        
+    }
+
+    drawPlayer(){
+        this.context.drawImage(
+            this.player.sprite.image,
+            this.player.sprite.box.x,
+            this.player.sprite.box.y,
+            this.player.sprite.box.w,
+            this.player.sprite.box.h, 
+
+            this.player.pos.x,
+            this.player.pos.y,
+            this.player.pos.w,
+            this.player.pos.h 
+        );
+    }
+
+    drawEnemy(index = 0){
+        var e = this.enemies[index];
+        this.context.drawImage(
+            e.sprite.image,
+            e.sprite.box.x,
+            e.sprite.box.y,
+            e.sprite.box.w,
+            e.sprite.box.h,
+
+            e.pos.x,
+            e.pos.y,
+            e.pos.w,
+            e.pos.h
+        );
+        
+    }
+
+    drawScenario(){
+        this.context.fillStyle = this.background;
+        this.context.fillRect(0, 0, this.rect.width, this.rect.height);
+    }
+
+    movePlayer(){
+        this.player.move(this.controls[window.key]);
     }
 
     loadSprites(sources){
@@ -207,11 +261,12 @@ class GameController{
 
     setup(assets){
         /* Assets's paramaters must have
-            {
+            {   
                 sprites: array,
                 sounds: array,
                 bgmusic: Sound,
                 bgtexture: Sprite,
+                playercontrols: object
 
             }
         */
@@ -226,11 +281,18 @@ class GameController{
         //load all assets at least once 
         this.loadSprites(assets.sprites);
         this.loadSounds(assets.sounds);
-        //set background music
+        //set background music        
         this.setBackgroundMusic(assets.bgmusic);
         //set background pattern texture
-        this.setBackgroundPattern(assets.bgtexture)
+        this.setBackgroundPattern(assets.bgtexture);
+        this.setPlayerControls(assets.playercontrols);
     }
 
+    update(){
+        this.movePlayer();
+        this.drawScenario();
+        this.drawPlayer();
+        this.drawEnemy();
+    }
 
 }
