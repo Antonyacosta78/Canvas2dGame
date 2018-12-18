@@ -1,2 +1,2 @@
 # Canvas2dGame
-2d browser game made on pure javascript + jquery
+Bomberman based 2d browser game made on canvas using pure javascript
