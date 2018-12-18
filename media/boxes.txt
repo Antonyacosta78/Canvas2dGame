@@ -1,0 +1,4 @@
+enemy_bottom:w16 h24
+enemy_top:w16 h23
+enemy_left:w32 h23
+enemy_right:w32 h23

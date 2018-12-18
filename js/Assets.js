@@ -162,3 +162,75 @@ class Enemy extends Character{
     }
 
 }
+
+class GameController{
+    constructor(canvasid){
+        this.dom = document.getElementById(canvasid);
+        this.rect = this.dom.getBoundingClientRect();
+        this.context = this.dom.getContext("2d");
+
+    }
+
+    setPlayerControls(up,down = false, left = false, right = false){
+        if(typeof up === "string" && down && left && right){
+            this.controls = {up: up, down: down, left: left, right: right};
+        }else if(typeof up === "object"){
+            this.controls = up;
+        }
+    }
+
+    setPlayer(char){
+        this.player = char;
+    }
+
+    loadSprites(sources){
+        sources.forEach(function(e){
+            new Sprite(e);
+        });
+    }
+
+    loadSounds(sources){
+        sources.forEach(function(e){
+            new Sound(e);
+        });
+    }
+    
+    setBackgroundMusic(sound){
+        this.bgmusic = sound;
+        this.bgmusic.loop();
+        this.bgmusic.vol(50);
+    }
+
+    setBackgroundPattern(sprite){
+        this.background = this.context.createPattern(sprite.image, "repeat");
+    }
+
+    setup(assets){
+        /* Assets's paramaters must have
+            {
+                sprites: array,
+                sounds: array,
+                bgmusic: Sound,
+                bgtexture: Sprite,
+
+            }
+        */
+
+        //event listeners for player controls
+        window.addEventListener("keyup",function(){
+            this.key = "";
+        });
+        window.addEventListener("keydown",function(e){
+            this.key = e.key;
+        });
+        //load all assets at least once 
+        this.loadSprites(assets.sprites);
+        this.loadSounds(assets.sounds);
+        //set background music
+        this.setBackgroundMusic(assets.bgmusic);
+        //set background pattern texture
+        this.setBackgroundPattern(assets.bgtexture)
+    }
+
+
+}
