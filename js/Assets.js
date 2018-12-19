@@ -14,14 +14,14 @@ class Sprite{
     
     row(row = 0){
         this.crow = row;
-        debug(this.crow);
+        debug("sprite row: "+this.crow);
         this.box.row(this.crow);
     }
 
     next(){
-        this.col = this.col == this.boxes[this.row]-1 ? 0 : this.col+1;
+        this.col = this.col >= (this.boxes[this.crow]-1)*_FRAME_DELAY ? 0 : this.col+1;
         debug(this.col);
-        this.box.col(this.col);
+        this.box.col(Math.floor(this.col/_FRAME_DELAY));
     }
 
     setImage(path){
@@ -129,26 +129,36 @@ class Character{
         this.pos = pos;
         this.pos.w = this.sprite.box.w*2;
         this.pos.h = this.sprite.box.h*2;
+        this.hbcenter = {x: this.pos.x+this.pos.w/2, y: this.pos.y+this.pos.h/2, r: this.pos.w/2};
     }
 
     move(direction){
-        debug(direction);
-        switch(direction){
-            case "up":
-                this.pos.y -=this.stats.speed;
-                break;
-            case "down":
-                this.pos.y +=this.stats.speed;
-                break;
-            case "left":
-                this.pos.x-=this.stats.speed;
-                break;
-            case "right":
-                this.pos.x+=this.stats.speed;
-                break;
+        if(typeof direction !== "undefined"){
+            debug("direction:"+direction);
+            switch(direction){
+                case "up":
+                    this.pos.y -=this.stats.speed;
+                    this.hbcenter.y -=this.stats.speed;
+                    break;
+                case "down":
+                    this.pos.y +=this.stats.speed;
+                    this.hbcenter.y +=this.stats.speed;                    
+                    break;
+                case "left":
+                    this.pos.x-=this.stats.speed;
+                    this.hbcenter.x-=this.stats.speed;
+                    break;
+                case "right":
+                    this.pos.x+=this.stats.speed;
+                    this.hbcenter.x+=this.stats.speed;
+                    break;
+            }
         }
-        debug(this.pos);
         this.sprite.row(this.spritesdirections[direction]);
+    }
+
+    changeSprite(){
+        this.sprite.next();
     }
 }
 
@@ -171,6 +181,7 @@ class GameController{
         this.rect = this.dom.getBoundingClientRect();
         this.context = this.dom.getContext("2d");
         this.enemies = [];
+        this.playerIsDead = false;
     }
 
     setPlayerControls(up,down = false, left = false, right = false){
@@ -188,15 +199,43 @@ class GameController{
         this.player = char;
     }
 
-    addEnemy(enemy){
+    addEnemy(index){
+        debug("addEnemy index:"+index);
+        var pos = {}; 
+        switch(this.enemiesdata[index].spawnedge){
+            case "top":
+                pos = {x:rand(0,this.rect.width), y:-60};
+                break;
+            case "bottom":
+                pos = {x:rand(0,this.rect.width), y:this.rect.height+30};
+                break;
+            case "left":
+                pos = {x:-60, y:rand(0,this.rect.height)};
+                break;
+            case "right":
+                pos = {x:this.rect.width+40, y:rand(0,this.rect.height)};
+                break;
+        }
+        var enemy = new Enemy(
+            new Sprite(
+                this.enemiesdata[index].sprite,
+                this.enemiesdata[index].box,
+                this.enemiesdata[index].boxes
+                ),
+            pos, 
+            this.enemiesdata[index].spritesdirection,
+            this.enemiesdata[index].movedirection
+        );
         this.enemies.push(enemy);
     }
 
-    addRandomEnemy(list){
-        
+    addRandomEnemy(){
+        debug("addRandomEnemy");
+        this.addEnemy(rand(0,this.enemiesdata.length-1));
     }
 
     drawPlayer(){
+        debug("drawPlayer");
         this.context.drawImage(
             this.player.sprite.image,
             this.player.sprite.box.x,
@@ -212,6 +251,7 @@ class GameController{
     }
 
     drawEnemy(index = 0){
+        debug("drawEnemy index:"+index);
         var e = this.enemies[index];
         this.context.drawImage(
             e.sprite.image,
@@ -229,12 +269,22 @@ class GameController{
     }
 
     drawScenario(){
+        debug("drawScenario");
         this.context.fillStyle = this.background;
         this.context.fillRect(0, 0, this.rect.width, this.rect.height);
     }
 
     movePlayer(){
-        this.player.move(this.controls[window.key]);
+        debug("movePlayer");
+        if(this.controls[window.key]==="up" && this.player.pos.y-this.player.stats.speed >= 0){
+            this.player.move(this.controls[window.key]);
+        }else if(this.controls[window.key] === "left" && this.player.pos.x-this.player.stats.speed >=0){
+            this.player.move(this.controls[window.key]);
+        }else if(this.controls[window.key] === "down" && this.player.pos.y+this.player.stats.speed <= this.rect.height-this.player.pos.h){
+            this.player.move(this.controls[window.key]);
+        }else if(this.controls[window.key] === "right" && this.player.pos.x+this.player.stats.speed <= this.rect.width-this.player.pos.w){
+            this.player.move(this.controls[window.key]);
+        }
     }
 
     loadSprites(sources){
@@ -252,14 +302,46 @@ class GameController{
     setBackgroundMusic(sound){
         this.bgmusic = sound;
         this.bgmusic.loop();
-        this.bgmusic.vol(50);
+        this.bgmusic.vol(70);
+    }
+
+    setDeathMusic(sound){
+        this.deathmusic = sound;
+        this.deathmusic.vol(70);
     }
 
     setBackgroundPattern(sprite){
         this.background = this.context.createPattern(sprite.image, "repeat");
     }
 
+    changePlayerSprite(){
+        this.player.changeSprite();
+    }
+
+    colission(c1,c2){
+        var colx = false, coly = false;
+        if(c1.hbcenter.x == c2.hbcenter.x){
+            colx = true;
+        }else{
+            var min = c1.hbcenter.x < c2.hbcenter.x ? c1.hbcenter.x : c2.hbcenter.x;
+            var max = c1.hbcenter.x > c2.hbcenter.x ? c1.hbcenter.x : c2.hbcenter.x;
+            colx = (max-min < c1.hbcenter.r+c2.hbcenter.r);
+        }
+
+        if(c1.hbcenter.y == c2.hbcenter.y){
+            coly = true;
+        }else{
+            var min = c1.hbcenter.y < c2.hbcenter.y ? c1.hbcenter.y : c2.hbcenter.y;
+            var max = c1.hbcenter.y > c2.hbcenter.y ? c1.hbcenter.y : c2.hbcenter.y;
+            coly = (max-min < c1.hbcenter.r+c2.hbcenter.r);
+        }
+
+        return (colx && coly);
+
+    }
+
     setup(assets){
+
         /* Assets's paramaters must have
             {   
                 sprites: array,
@@ -267,32 +349,116 @@ class GameController{
                 bgmusic: Sound,
                 bgtexture: Sprite,
                 playercontrols: object
+                enemies: array with objects, objects must have {
+                    sprite: string, 
+                    box: object{x,y,w,h}, 
+                    spritesdirection:object{
+                        direction1:index1, 
+                        direction2:index, 
+                        ...}, 
+                    boxes: array, 
+                    spawnedge:string,
+                    movedirection: string
+                },
+                player: object{
+                    sprite: string,
+                    box: object{x,y,w,h}
+                    boxes: array,
+                    spritesdirection: object{up,down,left,right,dead}
+                }
 
             }
         */
-
+        
         //event listeners for player controls
-        window.addEventListener("keyup",function(){
-            this.key = "";
-        });
-        window.addEventListener("keydown",function(e){
-            this.key = e.key;
-        });
+        window.addEventListener("keyup",decaptureKey);
+        window.addEventListener("keydown",captureKey);
+        //show fancy screen pre game
+        this.context.fillStyle = "black";
+        this.context.fillRect(0,0,this.rect.width,this.rect.height);
+        this.context.font = "40px Arial";
+        this.context.fillStyle = "white";
+        this.context.fillText("CLICK ON AREA TO START", 0, this.rect.height/5);
+
         //load all assets at least once 
         this.loadSprites(assets.sprites);
         this.loadSounds(assets.sounds);
+        //copy enemies list
+        this.enemiesdata = assets.enemies;
+        //creates all enemies
+        for(var i = 0; i< this.enemiesdata.length; i++){
+            this.addEnemy(i);
+        }
         //set background music        
         this.setBackgroundMusic(assets.bgmusic);
-        //set background pattern texture
+        //set death music
+        this.setDeathMusic(assets.deathmusic);
+        //set backgroundPattern
         this.setBackgroundPattern(assets.bgtexture);
+        //set player's controls         
         this.setPlayerControls(assets.playercontrols);
+        //sets playerposition to center
+        var playerpos = {x: this.rect.width/2, y: this.rect.height/2};
+        //sets player
+        this.setPlayer(
+            new Character(
+                new Sprite(
+                    assets.player.sprite,
+                    assets.player.box,
+                    assets.player.boxes
+                ),
+                playerpos,
+                assets.player.spritesdirection,
+                {speed: 5}
+            )
+        );
+
+    }
+
+    gameover(){
+        window.removeEventListener("keyup",decaptureKey);
+        window.removeEventListener("keydown",captureKey);
+        this.bgmusic.stop();
+        this.deathmusic.play();
+    }
+
+    showgameover(){
+        this.drawScenario();
+        this.context.font = "60px Arial";
+        this.context.fillStyle = "black";
+        this.context.fillText("GAME OVER", this.rect.width/5, this.rect.height/5);
+
     }
 
     update(){
-        this.movePlayer();
-        this.drawScenario();
-        this.drawPlayer();
-        this.drawEnemy();
+        if(!this.playerIsDead){
+            this.enemies.forEach(function(e){
+                e.changeSprite();
+                e.move();
+            });
+            this.movePlayer();
+            this.drawScenario();
+            this.changePlayerSprite();
+            this.drawPlayer();
+            for(var i = 0; i < this.enemies.length; i++){
+                var colider = this.colission(this.player,this.enemies[i]);
+                if(colider){
+                    console.log(colider);
+                    this.gameover();
+                    this.playerIsDead = true
+                }
+                this.drawEnemy(i);
+            }
+        }else{
+            this.player.move("dead");
+            this.drawScenario();
+            this.changePlayerSprite();
+            this.drawPlayer();
+            for(var i = 0; i < this.enemies.length; i++){
+                this.drawEnemy(i);
+            }
+
+        }
     }
 
 }

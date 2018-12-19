@@ -1,4 +1,5 @@
-var _DEBUG_ENABLED = true;
+var _DEBUG_ENABLED = false;
+var _FRAME_DELAY = 5;
 
 function debug(text, time = false){
     if(_DEBUG_ENABLED){
@@ -9,4 +10,17 @@ function debug(text, time = false){
         }
         
     }
+}
+function rand(min,max){
+	return Math.floor(Math.random()*((max+1)-min)+min);
+}
+
+function captureKey(e){
+        debug("Key pressed: "+e.key);
+        window.key = e.key;
+}
+
+function decaptureKey(e){
+    debug("Key unpressed");
+    window.key = "";
 }
