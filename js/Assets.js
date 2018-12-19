@@ -121,6 +121,29 @@ class Sound{
     }
 }
 
+class Item{
+    constructor(sprite){
+        this.sprite = sprite;
+        this.pos = {x:0,y:0};
+        this.setPrintDimensions();
+        this.hbcenter = {x: this.pos.x+this.pos.w/2, 
+            y: this.pos.y+this.pos.h/2, r: this.pos.w/2};
+        }
+
+    setPos(x,y){
+        this.pos.x = x;
+        this.pos.y = y;
+        this.hbcenter = {x: this.pos.x+this.pos.w/2, 
+            y: this.pos.y+this.pos.h/2, r: this.pos.w/2};
+
+    }
+
+    setPrintDimensions(){
+        this.pos.w = this.sprite.box.w*2;
+        this.pos.h = this.sprite.box.h*2
+    }
+}
+
 class Character{
     constructor(sprite, pos, spritesdirections, stats = {speed: 3}){
         this.sprite = sprite;
@@ -182,6 +205,7 @@ class GameController{
         this.context = this.dom.getContext("2d");
         this.enemies = [];
         this.playerIsDead = false;
+        this.score = 0;
     }
 
     setPlayerControls(up,down = false, left = false, right = false){
@@ -340,6 +364,38 @@ class GameController{
 
     }
 
+    popEnemy(){
+        this.enemies.shift();
+    }
+
+    spawnItem(){
+        this.item.setPos(
+            rand(0,this.rect.width-this.item.sprite.box.w),
+            rand(0,this.rect.height-this.item.sprite.box.h)
+        );
+    }
+
+    drawItem(){
+        this.context.drawImage(
+            this.item.sprite.image,
+            this.item.sprite.box.x,
+            this.item.sprite.box.y,
+            this.item.sprite.box.w,
+            this.item.sprite.box.h,
+
+            this.item.pos.x,
+            this.item.pos.y,
+            this.item.pos.w,
+            this.item.pos.h
+        );
+    }
+
+    drawScore(){
+        this.context.font = "20px Arial";
+        this.context.fillStyle = "black";
+        this.context.fillText("Score: "+this.score, 20,20);
+    }
+
     setup(assets){
 
         /* Assets's paramaters must have
@@ -366,6 +422,7 @@ class GameController{
                     boxes: array,
                     spritesdirection: object{up,down,left,right,dead}
                 }
+                deathmusic: Sound
 
             }
         */
@@ -397,6 +454,10 @@ class GameController{
         this.setBackgroundPattern(assets.bgtexture);
         //set player's controls         
         this.setPlayerControls(assets.playercontrols);
+        //sets item
+        this.item = new Item(assets.item);
+        //spawns item
+        this.spawnItem();
         //sets playerposition to center
         var playerpos = {x: this.rect.width/2, y: this.rect.height/2};
         //sets player
@@ -411,7 +472,7 @@ class GameController{
                 assets.player.spritesdirection,
                 {speed: 5}
             )
-        );
+        );        
 
     }
 
@@ -438,17 +499,23 @@ class GameController{
             });
             this.movePlayer();
             this.drawScenario();
+            this.drawItem();
             this.changePlayerSprite();
             this.drawPlayer();
+            if(this.colission(this.player, this.item)){
+                this.score += _SCORE_INCREMENT;
+                this.spawnItem();
+            }
             for(var i = 0; i < this.enemies.length; i++){
                 var colider = this.colission(this.player,this.enemies[i]);
                 if(colider){
-                    console.log(colider);
                     this.gameover();
                     this.playerIsDead = true
                 }
                 this.drawEnemy(i);
             }
+            this.drawScore();
+
         }else{
             this.player.move("dead");
             this.drawScenario();

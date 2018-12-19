@@ -59,15 +59,13 @@ var assets = {
      },
     bgmusic: new Sound("media/music.mp3"),
     bgtexture: new Sprite("media/background.png"),
-    deathmusic: new Sound("media/death.wav")
+    deathmusic: new Sound("media/death.wav"),
+    item: new Sprite("media/item.png",{x:0, y:0, w:14, h:14},[1])
 };
 
 var controller = new GameController("canvas");
 controller.setup(assets);
-controller.dom.addEventListener("click",function(){
-    controller.bgmusic.play();
-    mainloop();          
-});
+controller.dom.addEventListener("click",begin);
 
 function mainloop(){
     if(controller.background===null){
@@ -81,7 +79,23 @@ function mainloop(){
     }
     continueloop();
 }
+//sets interval to add new enemies
+window.setInterval(function(){
+    controller.addRandomEnemy();
+},3000);
+//sets interval to pop old enemies
+window.setInterval(function(){
+    controller.popEnemy();
+},6000);
 
 function continueloop(){
     window.requestAnimationFrame(mainloop);
+}
+function begin(){
+    controller.bgmusic.play();
+    dropclicklistener();
+    mainloop();  
+}
+function dropclicklistener(){
+    controller.dom.removeEventListener("click",begin);
 }

@@ -1,5 +1,6 @@
 var _DEBUG_ENABLED = false;
 var _FRAME_DELAY = 5;
+var _SCORE_INCREMENT = 100;
 
 function debug(text, time = false){
     if(_DEBUG_ENABLED){
